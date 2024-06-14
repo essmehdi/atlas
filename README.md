@@ -1,6 +1,6 @@
-# Atlas Programming Language
+# Atlas
 
-A simple programming language created to explore the world of compilers.
+A programming language and virtual machine with support for distributed execution.
 
 Example:
 ```
