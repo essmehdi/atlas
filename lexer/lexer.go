@@ -35,7 +35,7 @@ var KEYWORDS_MAP = map[string]TokenType{
 	"else":     ELSE,
 	"return":   RETURN,
 	"while":    WHILE,
-	"for":      FOR,
+	"loop":     LOOP,
 	"int":      TYPE_INT,
 	"uint":     TYPE_UINT,
 	"bool":     TYPE_BOOL,
@@ -43,6 +43,8 @@ var KEYWORDS_MAP = map[string]TokenType{
 	"true":     TRUE,
 	"false":    FALSE,
 }
+
+var TYPES_KEYWORDS = []TokenType{TYPE_INT, TYPE_UINT, TYPE_BOOL}
 
 type TokenType int
 
@@ -52,7 +54,7 @@ const (
 	ELSE
 	RETURN
 	WHILE
-	FOR
+	LOOP
 	FUNCTION
 
 	TRUE // Built-in literals
@@ -165,6 +167,10 @@ type Token struct {
 
 func (token *Token) FormattedLocation() string {
 	return fmt.Sprintf("at line %d, column %d", token.Row, token.Col)
+}
+
+func (token *Token) IsTypeKeyword() bool {
+	return utils.ArrayContains(token.Type, TYPES_KEYWORDS)
 }
 
 func createToken(tokenType TokenType, value string, rowIndex int, colIndex int) Token {

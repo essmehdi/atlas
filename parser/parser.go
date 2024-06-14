@@ -35,7 +35,7 @@ func NewParser(code *string) *Parser {
 
 	parser.nextToken()
 	parser.nextToken() // Load current & peek
-	
+
 	parser.registerPrefixParser(lexer.IDENTIFIER, parser.parseIdentifierExpression)
 	parser.registerPrefixParser(lexer.LITERAL_INT, parser.parseIntegerLiteralExpression)
 	parser.registerPrefixParser(lexer.TRUE, parser.parseBooleanLiteralExpression)
@@ -115,14 +115,14 @@ func (parser *Parser) reportError(err string) {
 }
 
 func (parser *Parser) reportUnexpectedToken(found *lexer.Token, expected ...lexer.TokenType) {
-	if (len(expected) > 0) {
+	if len(expected) > 0 {
 		expectedMsg := ""
 		for i, expect := range expected {
 			if i != 0 {
 				expectedMsg += " or "
 			}
 			expectedMsg += fmt.Sprint(expect)
-		} 
+		}
 		parser.reportError(fmt.Sprintf("Expected %s, found %s %s", expectedMsg, found.Type, found.FormattedLocation()))
 	}
 }
@@ -150,20 +150,38 @@ func (parser *Parser) parseStatement() Statement {
 	var statement Statement = nil
 	switch parser.currentToken.Type {
 	case lexer.VAR:
-		statement = parser.parseDeclaration()
+		statement = parser.parseDeclarationOrAssignment(false)
+	case lexer.IDENTIFIER:
+		statement = parser.parseDeclarationOrAssignment(true)
 	case lexer.IF:
 		statement = parser.parserIfStatement()
+	case lexer.LOOP:
+		statement = parser.parseLoopStatement()
 	}
 
 	return statement
 }
 
-func (parser *Parser) parseDeclaration() *DeclarationStatement {
-	declarationToken := parser.currentToken
+func (parser *Parser) parseDeclarationOrAssignment(assignment bool) Statement {
+	startToken := parser.currentToken
 
-	parser.nextToken()
+	if !assignment {
+		parser.nextToken()
+	}
 
-	declarationName := parser.parseIdentifier()
+	name := parser.parseIdentifier()
+	
+	var t *lexer.Token = nil
+	if !assignment && parser.peekTokenIs(lexer.COLON) {
+		parser.nextToken()
+		
+		if !parser.peekToken.IsTypeKeyword() {
+			parser.reportUnexpectedToken(parser.peekToken, lexer.TYPES_KEYWORDS...)
+		} else {
+			parser.nextToken()
+			t = parser.currentToken
+		}
+	}
 
 	if !parser.peekTokenIs(lexer.ASSIGN) {
 		parser.reportUnexpectedToken(parser.currentToken, lexer.ASSIGN)
@@ -173,7 +191,7 @@ func (parser *Parser) parseDeclaration() *DeclarationStatement {
 
 	parser.nextToken()
 
-	declarationValue := parser.parseExpression(LOWEST)
+	value := parser.parseExpression(LOWEST)
 
 	if !parser.peekTokenIs(lexer.SEMICOLON) {
 		parser.reportUnexpectedToken(parser.currentToken, lexer.SEMICOLON)
@@ -181,10 +199,18 @@ func (parser *Parser) parseDeclaration() *DeclarationStatement {
 		parser.nextToken()
 	}
 
+	if (assignment) {
+		return &AssignmentStatement{
+			Token: startToken,
+			Name: name,
+			Value: value,
+		}
+	}
 	return &DeclarationStatement{
-		Token: declarationToken,
-		Name:  declarationName,
-		Value: declarationValue,
+		Token: startToken,
+		Name:  name,
+		Type: t,
+		Value: value,
 	}
 }
 
@@ -247,7 +273,6 @@ func (parser *Parser) parseExpression(precedence int) Expression {
 
 	leftExpr := prefix()
 
-	fmt.Println(parser.currentToken, precedence, parser.peekToken, parser.peekTokenPrecedence())
 	for !parser.peekTokenIs(lexer.SEMICOLON) && precedence < parser.peekTokenPrecedence() {
 		infix := parser.infixParseFns[parser.peekToken.Type]
 		if infix == nil {
@@ -301,37 +326,36 @@ func (parser *Parser) parserIfStatement() *IfStatement {
 	conditions := []Expression{condition}
 	consequences := []*StatementsBlock{consequence}
 
-	var elseConsequence *StatementsBlock = nil 
+	var elseConsequence *StatementsBlock = nil
 	for parser.peekTokenIs(lexer.ELSE) {
-		if parser.peekTokenIs(lexer.ELSE) {
+		parser.nextToken()
+		if parser.peekTokenIs(lexer.LBRACE) {
 			parser.nextToken()
-			if parser.peekTokenIs(lexer.LBRACE) {
-				parser.nextToken()
-				elseConsequence = parser.parseStatementsBlock()
-				consequences = append(consequences, elseConsequence)
-				break
-			} else if parser.peekTokenIs(lexer.IF) {
-				condition, consequence := parser.parseConditionAndConsequence()
-				conditions = append(conditions, condition)
-				consequences = append(consequences, consequence)
-			} else {
-				parser.reportUnexpectedToken(parser.peekToken, lexer.IF, lexer.LBRACE)
-				return nil
-			}
+			elseConsequence = parser.parseStatementsBlock()
+			consequences = append(consequences, elseConsequence)
+			break
+		} else if parser.peekTokenIs(lexer.IF) {
+			condition, consequence := parser.parseConditionAndConsequence()
+			conditions = append(conditions, condition)
+			consequences = append(consequences, consequence)
+		} else {
+			parser.reportUnexpectedToken(parser.peekToken, lexer.IF, lexer.LBRACE)
+			return nil
 		}
 	}
 
 	return &IfStatement{
-		Token: startToken,
-		Conditions: conditions,
+		Token:        startToken,
+		Conditions:   conditions,
 		Consequences: consequences,
-		Else: elseConsequence,
+		Else:         elseConsequence,
 	}
 }
 
 func (parser *Parser) parseConditionAndConsequence() (Expression, *StatementsBlock) {
 	expression := parser.parseExpression(LOWEST)
 	if expression == nil {
+		parser.reportError("Could not parse condition expression")
 		return nil, nil
 	}
 
@@ -367,7 +391,33 @@ func (parser *Parser) parseStatementsBlock() *StatementsBlock {
 	}
 
 	return &StatementsBlock{
-		Token: startToken,
+		Token:      startToken,
 		Statements: statements,
+	}
+}
+
+func (parser *Parser) parseLoopStatement() *LoopStatement {
+	startToken := parser.currentToken
+	parser.nextToken()
+	
+	condition := parser.parseExpression(LOWEST)
+	if condition == nil {
+		parser.reportError("Could not parse condition expression")
+		return nil
+	}
+		
+	parser.nextToken()
+	
+	if !parser.currentTokenIs(lexer.LBRACE) {
+		parser.reportUnexpectedToken(parser.currentToken, lexer.LBRACE)
+		return nil
+	}
+
+	block := parser.parseStatementsBlock()
+	
+	return &LoopStatement {
+		Token: startToken,
+		Condition: condition,
+		Block: block,
 	}
 }

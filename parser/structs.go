@@ -10,32 +10,32 @@ import (
 const (
 	_ int = iota
 	LOWEST
-	BITWISE		// ~ &
-	EQUALS 		// ==
+	BITWISE     // ~ &
+	EQUALS      // ==
 	LESSGREATER // > or <
-	SUM 		// +
-	PRODUCT 	// *
-	PREFIX 		// -X or !X
-	CALL 		// myFunction(X)
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
 )
 
-var PRECEDENCE_MAP = map[lexer.TokenType]int {
-	lexer.BIT_AND: BITWISE,
-	lexer.BIT_OR: BITWISE,
-	lexer.EQ: EQUALS,
-	lexer.NEQ: EQUALS,
+var PRECEDENCE_MAP = map[lexer.TokenType]int{
+	lexer.BIT_AND:     BITWISE,
+	lexer.BIT_OR:      BITWISE,
+	lexer.EQ:          EQUALS,
+	lexer.NEQ:         EQUALS,
 	lexer.LOGICAL_AND: EQUALS,
-	lexer.LOGICAL_OR: EQUALS,
-	lexer.LT: LESSGREATER,
-	lexer.GT: LESSGREATER,
-	lexer.LEQ: LESSGREATER,
-	lexer.GEQ: LESSGREATER,
-	lexer.PLUS: SUM,
-	lexer.MINUS: SUM,
-	lexer.MULTIPLY: PRODUCT,
-	lexer.DIVIDE: PRODUCT,
-	lexer.BANG: PREFIX,
-	lexer.BIT_NOT: PREFIX,
+	lexer.LOGICAL_OR:  EQUALS,
+	lexer.LT:          LESSGREATER,
+	lexer.GT:          LESSGREATER,
+	lexer.LEQ:         LESSGREATER,
+	lexer.GEQ:         LESSGREATER,
+	lexer.PLUS:        SUM,
+	lexer.MINUS:       SUM,
+	lexer.MULTIPLY:    PRODUCT,
+	lexer.DIVIDE:      PRODUCT,
+	lexer.BANG:        PREFIX,
+	lexer.BIT_NOT:     PREFIX,
 }
 
 type Node interface {
@@ -77,9 +77,10 @@ type Expression interface {
 // Declaration: var a = 5;
 
 type DeclarationStatement struct {
-	Token *lexer.Token
-	Name  *Identifier
-	Value Expression
+	Token 	*lexer.Token
+	Name  	*Identifier
+	Type	*lexer.Token		// For now, only keywords are accepted as types (int, uint, bool)
+	Value 	Expression
 }
 
 func (decl *DeclarationStatement) statementNode() {}
@@ -98,20 +99,56 @@ func (decl *DeclarationStatement) StringRepr(level int) string {
 	if decl.Value != nil {
 		valueRepr = decl.Value.StringRepr(level + 1)
 	}
+	
+	t := ""
+	if decl.Type != nil {
+		t = fmt.Sprint(decl.Type.Type)
+	}
 
 	return utils.IndentStringByLevel(
 		level,
-		fmt.Sprintf("DeclarationStatement\nName:\n%s\nValue:\n%s", nameRepr, valueRepr),
+		fmt.Sprintf("DeclarationStatement\nName:\n%s\nValue:\n%s\nType: %s", nameRepr, valueRepr, t),
+	)
+}
+
+// Assignment statement: a = 9
+
+type AssignmentStatement struct {
+	Token 	*lexer.Token
+	Name  	*Identifier
+	Value 	Expression
+}
+
+func (assign *AssignmentStatement) statementNode() {}
+
+func (assign *AssignmentStatement) GetToken() *lexer.Token {
+	return assign.Token
+}
+
+func (assign *AssignmentStatement) StringRepr(level int) string {
+	nameRepr := ""
+	if assign.Name != nil {
+		nameRepr = assign.Name.StringRepr(level + 1)
+	}
+
+	valueRepr := ""
+	if assign.Value != nil {
+		valueRepr = assign.Value.StringRepr(level + 1)
+	}
+
+	return utils.IndentStringByLevel(
+		level,
+		fmt.Sprintf("AssignmentStatement\nName:\n%s\nValue:\n%s", nameRepr, valueRepr),
 	)
 }
 
 // If statement: if () {} else {};
 
 type IfStatement struct {
-	Token *lexer.Token
-	Conditions  []Expression
+	Token        *lexer.Token
+	Conditions   []Expression
 	Consequences []*StatementsBlock
-	Else *StatementsBlock
+	Else         *StatementsBlock
 }
 
 func (ifStmt *IfStatement) statementNode() {}
@@ -123,17 +160,16 @@ func (ifStmt *IfStatement) GetToken() *lexer.Token {
 func (ifStmt *IfStatement) StringRepr(level int) string {
 	buffer := ""
 	for i, cond := range ifStmt.Conditions {
-		fmt.Println(ifStmt.Consequences[i].StringRepr(0))
 		buffer += fmt.Sprintf(
 			"\nCondition:\n%s\nConsequence:\n%s",
-			cond.StringRepr(level + 1),
-			ifStmt.Consequences[i].StringRepr(level + 1),
+			cond.StringRepr(level+1),
+			ifStmt.Consequences[i].StringRepr(level+1),
 		)
 	}
 	if ifStmt.Else != nil {
 		buffer += fmt.Sprintf(
 			"Else:\n%s",
-			ifStmt.Else.StringRepr(level + 1),
+			ifStmt.Else.StringRepr(level+1),
 		)
 	}
 	return utils.IndentStringByLevel(
@@ -145,7 +181,7 @@ func (ifStmt *IfStatement) StringRepr(level int) string {
 // Statments block
 
 type StatementsBlock struct {
-	Token *lexer.Token
+	Token      *lexer.Token
 	Statements []Statement
 }
 
@@ -184,8 +220,8 @@ func (iden *Identifier) StringRepr(level int) string {
 // Integer literal expression: -5
 
 type IntegerLiteralExpression struct {
-	Token 	*lexer.Token
-	Value	int64
+	Token *lexer.Token
+	Value int64
 }
 
 func (liter *IntegerLiteralExpression) expressionNode() {}
@@ -204,8 +240,8 @@ func (liter *IntegerLiteralExpression) StringRepr(level int) string {
 // Boolean literal expression: false
 
 type BooleanLiteralExpression struct {
-	Token 	*lexer.Token
-	Value	bool
+	Token *lexer.Token
+	Value bool
 }
 
 func (boolean *BooleanLiteralExpression) expressionNode() {}
@@ -224,9 +260,9 @@ func (boolean *BooleanLiteralExpression) StringRepr(level int) string {
 // Prefix expression: !condition
 
 type PrefixExpression struct {
-	Token    	*lexer.Token
-	Operator 	string
-	Right    	Expression
+	Token    *lexer.Token
+	Operator string
+	Right    Expression
 }
 
 func (preExp *PrefixExpression) expressionNode() {}
@@ -245,10 +281,10 @@ func (preExp *PrefixExpression) StringRepr(level int) string {
 // Infix expression: a + b
 
 type InfixExpression struct {
-	Token    	*lexer.Token
-	Operator 	string
-	Right    	Expression
-	Left		Expression
+	Token    *lexer.Token
+	Operator string
+	Right    Expression
+	Left     Expression
 }
 
 func (infixExp *InfixExpression) expressionNode() {}
@@ -261,5 +297,26 @@ func (infixExp *InfixExpression) StringRepr(level int) string {
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("InfixExpression\nOperator: %s\nLeft:\n%s\nRight:\n%s", infixExp.Operator, infixExp.Left.StringRepr(level+1), infixExp.Right.StringRepr(level+1)),
+	)
+}
+
+// Loop expression: loop a > 10 {...}
+
+type LoopStatement struct {
+	Token     *lexer.Token
+	Condition Expression
+	Block      *StatementsBlock
+}
+
+func (loop *LoopStatement) statementNode() {}
+
+func (loop *LoopStatement) GetToken() *lexer.Token {
+	return loop.Token
+}
+
+func (loop *LoopStatement) StringRepr(level int) string {
+	return utils.IndentStringByLevel(
+		level,
+		fmt.Sprintf("LoopStatement:\nCondition:\n%s\nLoop:\n%s", loop.Condition.StringRepr(level+1), loop.Block.StringRepr(level+1)),
 	)
 }
