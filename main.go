@@ -7,7 +7,16 @@ import (
 )
 
 func main() {
-	testCode := "var a: bool = false;loop !a {b=2*5;} fun hi() {} a = true;"
+	testCode := `
+	var a: bool = false;
+	loop !a {
+		b=2*5+hi();
+	}
+	fun hi(msg: int) {
+	}
+	a = true;
+	hi(a);
+	`;
 	// testTokenizer(&testCode)
 	testParser(&testCode)
 }

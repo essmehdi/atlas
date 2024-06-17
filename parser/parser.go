@@ -45,6 +45,7 @@ func NewParser(code *string) *Parser {
 	parser.registerPrefixParser(lexer.MINUS, parser.parsePrefixExpression)
 	parser.registerPrefixParser(lexer.LPAR, parser.parseGroupedExpression)
 
+	parser.registerInfixParser(lexer.LPAR, parser.parseCallExpression)
 	parser.registerInfixParser(lexer.MINUS, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.PLUS, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.MULTIPLY, parser.parseInfixExpression)
@@ -152,21 +153,23 @@ func (parser *Parser) parseStatement() Statement {
 	var statement Statement = nil
 	switch parser.currentToken.Type {
 	case lexer.VAR:
-		statement = parser.parseDeclarationOrAssignment(false)
+		statement = parser.parseDeclarationOrAssignmentOrExpression(false)
 	case lexer.IDENTIFIER:
-		statement = parser.parseDeclarationOrAssignment(true)
+		statement = parser.parseDeclarationOrAssignmentOrExpression(true)
 	case lexer.IF:
 		statement = parser.parserIfStatement()
 	case lexer.LOOP:
 		statement = parser.parseLoopStatement()
 	case lexer.FUN:
 		statement = parser.parseFunctionDeclarationStatement()
+	default:
+		statement = parser.parseExpressionStatement()
 	}
 
 	return statement
 }
 
-func (parser *Parser) parseDeclarationOrAssignment(assignment bool) Statement {
+func (parser *Parser) parseDeclarationOrAssignmentOrExpression(assignment bool) Statement {
 	startToken := parser.currentToken
 
 	if !assignment {
@@ -185,6 +188,8 @@ func (parser *Parser) parseDeclarationOrAssignment(assignment bool) Statement {
 			parser.nextToken()
 			t = DATA_TYPE_MAP[parser.currentToken.Type]
 		}
+	} else if assignment && parser.peekTokenIs(lexer.LPAR) {
+		return parser.parseExpressionStatement()
 	}
 
 	if !parser.peekTokenIs(lexer.ASSIGN) {
@@ -477,12 +482,14 @@ func (parser *Parser) parseFunctionArgs() (*[]*Identifier, *[]DataType) {
 	identifiers := []*Identifier{}
 	dataTypes := []DataType{}
 
+	fmt.Println(parser.currentToken)
+
 	for !parser.currentTokenIs(lexer.RPAR) {
 		identifier := parser.parseIdentifier()
 
 		parser.nextToken()
 
-		if identifier == nil || parser.currentTokenIs(lexer.COLON) {
+		if identifier == nil || !parser.currentTokenIs(lexer.COLON) {
 			return nil, nil
 		}
 
@@ -497,4 +504,48 @@ func (parser *Parser) parseFunctionArgs() (*[]*Identifier, *[]DataType) {
 	}
 
 	return &identifiers, &dataTypes
+}
+
+func (parser *Parser) parseExpressionStatement() *ExpressionStatement {
+	startToken := parser.currentToken
+	expression := parser.parseExpression(LOWEST);
+	if expression == nil {
+		return nil
+	}
+	if parser.peekTokenIs(lexer.SEMICOLON) {
+		parser.nextToken()
+	}
+	return &ExpressionStatement {
+		Token: startToken,
+		Expression: expression,
+	}
+}
+
+func (parser *Parser) parseCall(function Expression) *CallExpression {
+	expr := &CallExpression{Token: parser.currentToken, Function: function}
+	expr.Arguments = parser.parseCallArguments()
+	return expr
+}
+
+func (parser *Parser) parseCallExpression(function Expression) Expression {
+	return parser.parseCall(function)
+} 
+
+func (parser *Parser) parseCallArguments() []Expression {
+	args := []Expression{}
+	if parser.peekTokenIs(lexer.RPAR) {
+		parser.nextToken()
+		return args
+	}
+	parser.nextToken()
+	args = append(args, parser.parseExpression(LOWEST))
+	for parser.peekTokenIs(lexer.COMMA) {
+		parser.nextToken()
+		parser.nextToken()
+		args = append(args, parser.parseExpression(LOWEST))
+	}
+	if !parser.peekTokenIs(lexer.RPAR) {
+		return nil
+	}
+	return args
 }

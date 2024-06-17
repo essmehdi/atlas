@@ -4,6 +4,7 @@ import (
 	"atlas/lexer"
 	"atlas/utils"
 	"fmt"
+	"strings"
 )
 
 // Operator precedance
@@ -20,22 +21,23 @@ const (
 )
 
 var PRECEDENCE_MAP = map[lexer.TokenType]int{
-	lexer.BIT_AND:     BITWISE,
-	lexer.BIT_OR:      BITWISE,
-	lexer.EQ:          EQUALS,
-	lexer.NEQ:         EQUALS,
-	lexer.LOGICAL_AND: EQUALS,
-	lexer.LOGICAL_OR:  EQUALS,
-	lexer.LT:          LESSGREATER,
-	lexer.GT:          LESSGREATER,
-	lexer.LEQ:         LESSGREATER,
-	lexer.GEQ:         LESSGREATER,
-	lexer.PLUS:        SUM,
-	lexer.MINUS:       SUM,
-	lexer.MULTIPLY:    PRODUCT,
-	lexer.DIVIDE:      PRODUCT,
-	lexer.BANG:        PREFIX,
-	lexer.BIT_NOT:     PREFIX,
+	lexer.BIT_AND:     	BITWISE,
+	lexer.BIT_OR:      	BITWISE,
+	lexer.EQ:          	EQUALS,
+	lexer.NEQ:         	EQUALS,
+	lexer.LOGICAL_AND: 	EQUALS,
+	lexer.LOGICAL_OR:  	EQUALS,
+	lexer.LT:          	LESSGREATER,
+	lexer.GT:          	LESSGREATER,
+	lexer.LEQ:         	LESSGREATER,
+	lexer.GEQ:         	LESSGREATER,
+	lexer.PLUS:        	SUM,
+	lexer.MINUS:       	SUM,
+	lexer.MULTIPLY:    	PRODUCT,
+	lexer.DIVIDE:      	PRODUCT,
+	lexer.BANG:        	PREFIX,
+	lexer.BIT_NOT:     	PREFIX,
+	lexer.LPAR:			CALL,
 }
 
 type DataType int
@@ -403,5 +405,57 @@ func (fun *FunctionDeclarationStatement) StringRepr(level int) string {
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("FunctionDeclarationStatement:\nName:\n%s\nArgs: %s\nBody:\n%s", fun.Name.StringRepr(level + 1), argsStr, fun.Body.StringRepr(level + 1)),
+	)
+}
+
+// Expression statement: hello();
+
+type ExpressionStatement struct {
+	Token 		*lexer.Token
+	Expression	Expression
+}
+
+func (expr *ExpressionStatement) statementNode() {}
+
+func (expr *ExpressionStatement) GetToken() *lexer.Token {
+	return expr.Token
+}
+
+func (expr *ExpressionStatement) StringRepr(level int) string {
+	if expr == nil {
+		return ""
+	}
+	return utils.IndentStringByLevel(
+		level,
+		fmt.Sprintf("ExpressionStatement:\n%s", expr.Expression.StringRepr(level + 1)),
+	)
+}
+
+// Call expression: hello()
+
+type CallExpression struct {
+	Token 		*lexer.Token
+	Function 	Expression
+	Arguments 	[]Expression
+}
+
+func (ce *CallExpression) expressionNode() {}
+
+func (ce *CallExpression) GetToken() *lexer.Token { return ce.Token }
+
+func (ce *CallExpression) StringRepr(level int) string {
+	if ce == nil {
+		return ""
+	}
+
+	var argsBuilder strings.Builder
+	for _, arg := range ce.Arguments {
+		argsBuilder.WriteString(arg.StringRepr(level + 1))
+		argsBuilder.WriteRune('\n')
+	}
+
+	return utils.IndentStringByLevel(
+		level,
+		fmt.Sprintf("CallExpression:\nName:\n%s\nArgs:\n%s", ce.Function.StringRepr(level + 1), argsBuilder.String()),
 	)
 }
