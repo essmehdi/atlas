@@ -482,8 +482,6 @@ func (parser *Parser) parseFunctionArgs() (*[]*Identifier, *[]DataType) {
 	identifiers := []*Identifier{}
 	dataTypes := []DataType{}
 
-	fmt.Println(parser.currentToken)
-
 	for !parser.currentTokenIs(lexer.RPAR) {
 		identifier := parser.parseIdentifier()
 
@@ -524,6 +522,9 @@ func (parser *Parser) parseExpressionStatement() *ExpressionStatement {
 func (parser *Parser) parseCall(function Expression) *CallExpression {
 	expr := &CallExpression{Token: parser.currentToken, Function: function}
 	expr.Arguments = parser.parseCallArguments()
+	if parser.peekTokenIs(lexer.RPAR) {
+		parser.nextToken()
+	}
 	return expr
 }
 
