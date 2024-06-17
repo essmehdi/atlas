@@ -38,6 +38,29 @@ var PRECEDENCE_MAP = map[lexer.TokenType]int{
 	lexer.BIT_NOT:     PREFIX,
 }
 
+type DataType int
+const (
+	INFERED DataType = iota
+	INT
+	UINT
+	BOOL
+)
+
+func (dataType DataType) String() string {
+	return [...]string{
+		"Infered",
+		"Integer",
+		"Unsigned integer",
+		"Boolean",
+	}[dataType]
+}
+
+var DATA_TYPE_MAP = map[lexer.TokenType]DataType{
+	lexer.TYPE_INT: INT,
+	lexer.TYPE_UINT: UINT,
+	lexer.TYPE_BOOL: BOOL,
+}
+
 type Node interface {
 	GetToken() *lexer.Token      // Gets the initiating token
 	StringRepr(level int) string // Gets the Node string representation
@@ -79,7 +102,7 @@ type Expression interface {
 type DeclarationStatement struct {
 	Token 	*lexer.Token
 	Name  	*Identifier
-	Type	*lexer.Token		// For now, only keywords are accepted as types (int, uint, bool)
+	Type	DataType		// For now, only builtin types are accepted
 	Value 	Expression
 }
 
@@ -90,6 +113,9 @@ func (decl *DeclarationStatement) GetToken() *lexer.Token {
 }
 
 func (decl *DeclarationStatement) StringRepr(level int) string {
+	if decl == nil {
+		return ""
+	}
 	nameRepr := ""
 	if decl.Name != nil {
 		nameRepr = decl.Name.StringRepr(level + 1)
@@ -100,14 +126,9 @@ func (decl *DeclarationStatement) StringRepr(level int) string {
 		valueRepr = decl.Value.StringRepr(level + 1)
 	}
 	
-	t := ""
-	if decl.Type != nil {
-		t = fmt.Sprint(decl.Type.Type)
-	}
-
 	return utils.IndentStringByLevel(
 		level,
-		fmt.Sprintf("DeclarationStatement\nName:\n%s\nValue:\n%s\nType: %s", nameRepr, valueRepr, t),
+		fmt.Sprintf("DeclarationStatement\nName:\n%s\nValue:\n%s\nType: %s", nameRepr, valueRepr, decl.Type),
 	)
 }
 
@@ -126,6 +147,9 @@ func (assign *AssignmentStatement) GetToken() *lexer.Token {
 }
 
 func (assign *AssignmentStatement) StringRepr(level int) string {
+	if assign == nil {
+		return ""
+	}
 	nameRepr := ""
 	if assign.Name != nil {
 		nameRepr = assign.Name.StringRepr(level + 1)
@@ -158,6 +182,9 @@ func (ifStmt *IfStatement) GetToken() *lexer.Token {
 }
 
 func (ifStmt *IfStatement) StringRepr(level int) string {
+	if ifStmt == nil {
+		return ""
+	}
 	buffer := ""
 	for i, cond := range ifStmt.Conditions {
 		buffer += fmt.Sprintf(
@@ -190,6 +217,12 @@ func (block *StatementsBlock) GetToken() *lexer.Token {
 }
 
 func (block *StatementsBlock) StringRepr(level int) string {
+	if block == nil {
+		return ""
+	}
+	if len(block.Statements) == 0 {
+		return "Empty"
+	}
 	buffer := ""
 	for _, stmt := range block.Statements {
 		buffer = buffer + stmt.StringRepr(level) + "\n"
@@ -211,6 +244,9 @@ func (iden *Identifier) GetToken() *lexer.Token {
 }
 
 func (iden *Identifier) StringRepr(level int) string {
+	if iden == nil {
+		return ""
+	}
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("Identifier: %s", iden.Value),
@@ -231,6 +267,9 @@ func (liter *IntegerLiteralExpression) GetToken() *lexer.Token {
 }
 
 func (liter *IntegerLiteralExpression) StringRepr(level int) string {
+	if liter == nil {
+		return ""
+	}
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("IntegerLiteral: %d", liter.Value),
@@ -251,6 +290,9 @@ func (boolean *BooleanLiteralExpression) GetToken() *lexer.Token {
 }
 
 func (boolean *BooleanLiteralExpression) StringRepr(level int) string {
+	if boolean == nil {
+		return ""
+	}
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("BooleanLiteral: %t", boolean.Value),
@@ -272,6 +314,9 @@ func (preExp *PrefixExpression) GetToken() *lexer.Token {
 }
 
 func (preExp *PrefixExpression) StringRepr(level int) string {
+	if preExp == nil {
+		return ""
+	}
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("PrefixExpression\nOperator: %s\nRight:\n%s", preExp.Operator, preExp.Right.StringRepr(level+1)),
@@ -294,6 +339,9 @@ func (infixExp *InfixExpression) GetToken() *lexer.Token {
 }
 
 func (infixExp *InfixExpression) StringRepr(level int) string {
+	if infixExp == nil {
+		return ""
+	}
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("InfixExpression\nOperator: %s\nLeft:\n%s\nRight:\n%s", infixExp.Operator, infixExp.Left.StringRepr(level+1), infixExp.Right.StringRepr(level+1)),
@@ -315,8 +363,45 @@ func (loop *LoopStatement) GetToken() *lexer.Token {
 }
 
 func (loop *LoopStatement) StringRepr(level int) string {
+	if loop == nil {
+		return ""
+	}
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("LoopStatement:\nCondition:\n%s\nLoop:\n%s", loop.Condition.StringRepr(level+1), loop.Block.StringRepr(level+1)),
+	)
+}
+
+// Function definition: fun hello() {}
+
+type FunctionDeclarationStatement struct {
+	Token 			*lexer.Token
+	Name			*Identifier
+	ArgsNames		[]*Identifier
+	ArgsTypes		[]DataType
+	Body			*StatementsBlock
+}
+
+func (fun *FunctionDeclarationStatement) statementNode() {}
+
+func (fun *FunctionDeclarationStatement) GetToken() *lexer.Token {
+	return fun.Token
+}
+
+func (fun *FunctionDeclarationStatement) StringRepr(level int) string {
+	if fun == nil {
+		return ""
+	}
+	argsStr := ""
+	for i, arg := range fun.ArgsNames {
+		if i > 0 {
+			argsStr += ","
+		}
+		argsStr += arg.Value + ": " + fun.ArgsTypes[i].String()
+	}
+
+	return utils.IndentStringByLevel(
+		level,
+		fmt.Sprintf("FunctionDeclarationStatement:\nName:\n%s\nArgs: %s\nBody:\n%s", fun.Name.StringRepr(level + 1), argsStr, fun.Body.StringRepr(level + 1)),
 	)
 }

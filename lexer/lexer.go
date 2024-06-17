@@ -39,7 +39,7 @@ var KEYWORDS_MAP = map[string]TokenType{
 	"int":      TYPE_INT,
 	"uint":     TYPE_UINT,
 	"bool":     TYPE_BOOL,
-	"function": FUNCTION,
+	"fun": 		FUN,
 	"true":     TRUE,
 	"false":    FALSE,
 }
@@ -55,7 +55,7 @@ const (
 	RETURN
 	WHILE
 	LOOP
-	FUNCTION
+	FUN
 
 	TRUE // Built-in literals
 	FALSE
@@ -98,6 +98,7 @@ const (
 	RBRACKET  // Right bracket ]
 	SEMICOLON // Semicolon ;
 	COLON     // Colon :
+	COMMA	  // Comma ,
 	ILLEGAL   // Illegal token
 	EOF       // End of file
 )
@@ -153,6 +154,7 @@ func (d TokenType) String() string {
 		"Right bracket",
 		"Semicolon",
 		"Colon",
+		"Comma",
 		"Illegal",
 		"End of file",
 	}[d]
@@ -269,6 +271,10 @@ func (tokenizer *Tokenizer) NextToken() (*Token, error) {
 			return &token, nil
 		} else if currentChar == ':' {
 			token := createToken(COLON, string(currentChar), tokenizer.line, tokenizer.index-tokenizer.lineStart)
+			tokenizer.index++
+			return &token, nil
+		} else if currentChar == ',' {
+			token := createToken(COMMA, string(currentChar), tokenizer.line, tokenizer.index-tokenizer.lineStart)
 			tokenizer.index++
 			return &token, nil
 		} else {

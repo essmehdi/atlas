@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	testCode := "var a: uint = 3;loop a>2 {a=a-1;}"
+	testCode := "var a: bool = false;loop !a {b=2*5;} fun hi() {} a = true;"
 	// testTokenizer(&testCode)
 	testParser(&testCode)
 }

@@ -124,6 +124,8 @@ func (parser *Parser) reportUnexpectedToken(found *lexer.Token, expected ...lexe
 			expectedMsg += fmt.Sprint(expect)
 		}
 		parser.reportError(fmt.Sprintf("Expected %s, found %s %s", expectedMsg, found.Type, found.FormattedLocation()))
+	} else {
+		parser.reportError(fmt.Sprintf("Unexpected token %s found %s", found.Type, found.FormattedLocation()))
 	}
 }
 
@@ -157,6 +159,8 @@ func (parser *Parser) parseStatement() Statement {
 		statement = parser.parserIfStatement()
 	case lexer.LOOP:
 		statement = parser.parseLoopStatement()
+	case lexer.FUN:
+		statement = parser.parseFunctionDeclarationStatement()
 	}
 
 	return statement
@@ -171,7 +175,7 @@ func (parser *Parser) parseDeclarationOrAssignment(assignment bool) Statement {
 
 	name := parser.parseIdentifier()
 	
-	var t *lexer.Token = nil
+	var t DataType = INFERED
 	if !assignment && parser.peekTokenIs(lexer.COLON) {
 		parser.nextToken()
 		
@@ -179,7 +183,7 @@ func (parser *Parser) parseDeclarationOrAssignment(assignment bool) Statement {
 			parser.reportUnexpectedToken(parser.peekToken, lexer.TYPES_KEYWORDS...)
 		} else {
 			parser.nextToken()
-			t = parser.currentToken
+			t = DATA_TYPE_MAP[parser.currentToken.Type]
 		}
 	}
 
@@ -420,4 +424,77 @@ func (parser *Parser) parseLoopStatement() *LoopStatement {
 		Condition: condition,
 		Block: block,
 	}
+}
+
+func (parser *Parser) parseFunctionDeclarationStatement() *FunctionDeclarationStatement {
+	startToken := parser.currentToken
+
+	parser.nextToken()
+
+	name := parser.parseIdentifier()
+	if name == nil {
+		return nil
+	}
+
+	if !parser.peekTokenIs(lexer.LPAR) {
+		parser.reportUnexpectedToken(parser.peekToken, lexer.LPAR)
+		return nil
+	}
+
+	parser.nextToken()
+
+	identifiers := []*Identifier{}
+	dataTypes := []DataType{}
+	if !parser.peekTokenIs(lexer.RPAR) {
+		parser.nextToken()
+		parsedIdentifiers, parsedDataTypes := parser.parseFunctionArgs()
+		if parsedIdentifiers != nil {
+			identifiers = *parsedIdentifiers
+			dataTypes = *parsedDataTypes
+		}
+	} else {
+		parser.nextToken()
+	}
+
+	var body *StatementsBlock = nil
+	if !parser.peekTokenIs(lexer.LBRACE) {
+		parser.reportUnexpectedToken(parser.peekToken)
+	} else {
+		parser.nextToken()
+		body = parser.parseStatementsBlock()
+	}
+
+	return &FunctionDeclarationStatement {
+		Token: startToken,
+		Name: name,
+		ArgsNames: identifiers,
+		ArgsTypes: dataTypes,
+		Body: body,
+	}
+}
+
+func (parser *Parser) parseFunctionArgs() (*[]*Identifier, *[]DataType) {
+	identifiers := []*Identifier{}
+	dataTypes := []DataType{}
+
+	for !parser.currentTokenIs(lexer.RPAR) {
+		identifier := parser.parseIdentifier()
+
+		parser.nextToken()
+
+		if identifier == nil || parser.currentTokenIs(lexer.COLON) {
+			return nil, nil
+		}
+
+		parser.nextToken()
+
+		dataType := DATA_TYPE_MAP[parser.currentToken.Type]
+
+		identifiers = append(identifiers, identifier)
+		dataTypes = append(dataTypes, dataType)
+
+		parser.nextToken()
+	}
+
+	return &identifiers, &dataTypes
 }
