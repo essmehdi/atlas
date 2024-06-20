@@ -30,18 +30,18 @@ var OPERATORS_ASSIGN_MAP = map[string]TokenType{
 }
 
 var KEYWORDS_MAP = map[string]TokenType{
-	"var":      VAR,
-	"if":       IF,
-	"else":     ELSE,
-	"return":   RETURN,
-	"while":    WHILE,
-	"loop":     LOOP,
-	"int":      TYPE_INT,
-	"uint":     TYPE_UINT,
-	"bool":     TYPE_BOOL,
-	"fun": 		FUN,
-	"true":     TRUE,
-	"false":    FALSE,
+	"var":    VAR,
+	"if":     IF,
+	"else":   ELSE,
+	"return": RETURN,
+	"while":  WHILE,
+	"loop":   LOOP,
+	"int":    TYPE_INT,
+	"uint":   TYPE_UINT,
+	"bool":   TYPE_BOOL,
+	"fun":    FUN,
+	"true":   TRUE,
+	"false":  FALSE,
 }
 
 var TYPES_KEYWORDS = []TokenType{TYPE_INT, TYPE_UINT, TYPE_BOOL}
@@ -98,7 +98,7 @@ const (
 	RBRACKET  // Right bracket ]
 	SEMICOLON // Semicolon ;
 	COLON     // Colon :
-	COMMA	  // Comma ,
+	COMMA     // Comma ,
 	ILLEGAL   // Illegal token
 	EOF       // End of file
 )
@@ -191,7 +191,7 @@ type Tokenizer struct {
 	lineStart int
 }
 
-func NewTokenizer(code *string) Tokenizer {
+func New(code *string) Tokenizer {
 	tokenizer := Tokenizer{
 		code:      code,
 		index:     0,

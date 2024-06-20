@@ -16,13 +16,13 @@ func main() {
 	}
 	a = true;
 	hi(a);
-	`;
+	`
 	// testTokenizer(&testCode)
 	testParser(&testCode)
 }
 
 func testTokenizer(code *string) {
-	tokenizer := lexer.NewTokenizer(code)
+	tokenizer := lexer.New(code)
 
 	for {
 		token, err := tokenizer.NextToken()
@@ -38,11 +38,11 @@ func testTokenizer(code *string) {
 }
 
 func testParser(code *string) {
-	parser := parser.NewParser(code);
-	program := parser.Parse()
+	p := parser.New(code)
+	program := p.Parse()
 	program.Print()
 
-	for _, err := range parser.Errors {
+	for _, err := range p.Errors {
 		fmt.Println(err)
 	}
 }

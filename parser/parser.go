@@ -22,9 +22,9 @@ type Parser struct {
 	infixParseFns  map[lexer.TokenType]infixParseFn
 }
 
-func NewParser(code *string) *Parser {
+func New(code *string) *Parser {
 	parser := &Parser{
-		tokenizer:    lexer.NewTokenizer(code),
+		tokenizer:    lexer.New(code),
 		currentToken: nil,
 		peekToken:    nil,
 		Errors:       []string{},
@@ -179,11 +179,11 @@ func (parser *Parser) parseDeclarationOrAssignmentOrExpression(assignment bool) 
 	}
 
 	name := parser.parseIdentifier()
-	
+
 	var t DataType = INFERED
 	if !assignment && parser.peekTokenIs(lexer.COLON) {
 		parser.nextToken()
-		
+
 		if !parser.peekToken.IsTypeKeyword() {
 			parser.reportUnexpectedToken(parser.peekToken, lexer.TYPES_KEYWORDS...)
 		} else {
@@ -210,17 +210,17 @@ func (parser *Parser) parseDeclarationOrAssignmentOrExpression(assignment bool) 
 		parser.nextToken()
 	}
 
-	if (assignment) {
+	if assignment {
 		return &AssignmentStatement{
 			Token: startToken,
-			Name: name,
+			Name:  name,
 			Value: value,
 		}
 	}
 	return &DeclarationStatement{
 		Token: startToken,
 		Name:  name,
-		Type: t,
+		Type:  t,
 		Value: value,
 	}
 }
@@ -410,26 +410,26 @@ func (parser *Parser) parseStatementsBlock() *StatementsBlock {
 func (parser *Parser) parseLoopStatement() *LoopStatement {
 	startToken := parser.currentToken
 	parser.nextToken()
-	
+
 	condition := parser.parseExpression(LOWEST)
 	if condition == nil {
 		parser.reportError("Could not parse condition expression")
 		return nil
 	}
-		
+
 	parser.nextToken()
-	
+
 	if !parser.currentTokenIs(lexer.LBRACE) {
 		parser.reportUnexpectedToken(parser.currentToken, lexer.LBRACE)
 		return nil
 	}
 
 	block := parser.parseStatementsBlock()
-	
-	return &LoopStatement {
-		Token: startToken,
+
+	return &LoopStatement{
+		Token:     startToken,
 		Condition: condition,
-		Block: block,
+		Block:     block,
 	}
 }
 
@@ -471,12 +471,12 @@ func (parser *Parser) parseFunctionDeclarationStatement() *FunctionDeclarationSt
 		body = parser.parseStatementsBlock()
 	}
 
-	return &FunctionDeclarationStatement {
-		Token: startToken,
-		Name: name,
+	return &FunctionDeclarationStatement{
+		Token:     startToken,
+		Name:      name,
 		ArgsNames: identifiers,
 		ArgsTypes: dataTypes,
-		Body: body,
+		Body:      body,
 	}
 }
 
@@ -508,15 +508,15 @@ func (parser *Parser) parseFunctionArgs() (*[]*Identifier, *[]DataType) {
 
 func (parser *Parser) parseExpressionStatement() *ExpressionStatement {
 	startToken := parser.currentToken
-	expression := parser.parseExpression(LOWEST);
+	expression := parser.parseExpression(LOWEST)
 	if expression == nil {
 		return nil
 	}
 	if parser.peekTokenIs(lexer.SEMICOLON) {
 		parser.nextToken()
 	}
-	return &ExpressionStatement {
-		Token: startToken,
+	return &ExpressionStatement{
+		Token:      startToken,
 		Expression: expression,
 	}
 }
@@ -532,7 +532,7 @@ func (parser *Parser) parseCall(function Expression) *CallExpression {
 
 func (parser *Parser) parseCallExpression(function Expression) Expression {
 	return parser.parseCall(function)
-} 
+}
 
 func (parser *Parser) parseCallArguments() []Expression {
 	args := []Expression{}
@@ -558,7 +558,7 @@ func (parser *Parser) parseReturnStatement() *ReturnStatement {
 
 	parser.nextToken()
 
-	expression := parser.parseExpression(LOWEST);
+	expression := parser.parseExpression(LOWEST)
 	if expression == nil {
 		parser.reportError(fmt.Sprintf("Could not parse expression for return statement %s", startToken.FormattedLocation()))
 		return nil
@@ -570,8 +570,8 @@ func (parser *Parser) parseReturnStatement() *ReturnStatement {
 		parser.nextToken()
 	}
 
-	return &ReturnStatement {
-		Token: startToken,
+	return &ReturnStatement{
+		Token:      startToken,
 		Expression: expression,
 	}
 }
