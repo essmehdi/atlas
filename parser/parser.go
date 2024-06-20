@@ -162,6 +162,8 @@ func (parser *Parser) parseStatement() Statement {
 		statement = parser.parseLoopStatement()
 	case lexer.FUN:
 		statement = parser.parseFunctionDeclarationStatement()
+	case lexer.RETURN:
+		statement = parser.parseReturnStatement()
 	default:
 		statement = parser.parseExpressionStatement()
 	}
@@ -549,4 +551,27 @@ func (parser *Parser) parseCallArguments() []Expression {
 		return nil
 	}
 	return args
+}
+
+func (parser *Parser) parseReturnStatement() *ReturnStatement {
+	startToken := parser.currentToken
+
+	parser.nextToken()
+
+	expression := parser.parseExpression(LOWEST);
+	if expression == nil {
+		parser.reportError(fmt.Sprintf("Could not parse expression for return statement %s", startToken.FormattedLocation()))
+		return nil
+	}
+
+	if !parser.peekTokenIs(lexer.SEMICOLON) {
+		parser.reportUnexpectedToken(parser.peekToken, lexer.SEMICOLON)
+	} else {
+		parser.nextToken()
+	}
+
+	return &ReturnStatement {
+		Token: startToken,
+		Expression: expression,
+	}
 }

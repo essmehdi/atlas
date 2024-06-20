@@ -459,3 +459,25 @@ func (ce *CallExpression) StringRepr(level int) string {
 		fmt.Sprintf("CallExpression:\nName:\n%s\nArgs:\n%s", ce.Function.StringRepr(level + 1), argsBuilder.String()),
 	)
 }
+
+// Return statement
+
+type ReturnStatement struct {
+	Token		*lexer.Token
+	Expression	Expression
+}
+
+func (ret *ReturnStatement) statementNode() {}
+
+func (ret *ReturnStatement) GetToken() *lexer.Token { return ret.Token }
+
+func (ret *ReturnStatement) StringRepr(level int) string {
+	if ret == nil {
+		return ""
+	}
+
+	return utils.IndentStringByLevel(
+		level,
+		fmt.Sprintf("ReturnStatement:\nExpression:\n%s", ret.Expression.StringRepr(level + 1)),
+	)
+}

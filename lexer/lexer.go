@@ -401,7 +401,7 @@ func (tokenizer *Tokenizer) readOperatorOrAssign() (string, TokenType, int) {
 	if i < len(*tokenizer.code) {
 		buffer = buffer + string((*tokenizer.code)[i])
 
-		if doubleCharOp, ok := OPERATORS_ASSIGN_MAP[buffer]; ok { // TODO: Fix this shit
+		if doubleCharOp, ok := OPERATORS_ASSIGN_MAP[buffer]; ok {
 			return buffer, doubleCharOp, tokenizer.index + 2
 		}
 		buffer = string(buffer[0])
