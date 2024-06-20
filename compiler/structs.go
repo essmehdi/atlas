@@ -1,5 +1,7 @@
 package compiler
 
+import "atlas/parser"
+
 type OpCode = byte
 
 type Instruction = byte
@@ -37,4 +39,18 @@ func GetOpCode(instruction Instruction) OpCode {
 
 func GetArg(instruction Instruction) byte {
 	return instruction & 0xF // Bit mask
+}
+
+type Compiler struct {
+	instructions []Instruction
+}
+
+func New() Compiler {
+	return Compiler{
+		instructions: []Instruction{},
+	}
+}
+
+func (compiler *Compiler) compile(program parser.Program) error {
+	return nil
 }
