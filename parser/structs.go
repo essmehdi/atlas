@@ -21,26 +21,27 @@ const (
 )
 
 var PRECEDENCE_MAP = map[lexer.TokenType]int{
-	lexer.BIT_AND:     	BITWISE,
-	lexer.BIT_OR:      	BITWISE,
-	lexer.EQ:          	EQUALS,
-	lexer.NEQ:         	EQUALS,
-	lexer.LOGICAL_AND: 	EQUALS,
-	lexer.LOGICAL_OR:  	EQUALS,
-	lexer.LT:          	LESSGREATER,
-	lexer.GT:          	LESSGREATER,
-	lexer.LEQ:         	LESSGREATER,
-	lexer.GEQ:         	LESSGREATER,
-	lexer.PLUS:        	SUM,
-	lexer.MINUS:       	SUM,
-	lexer.MULTIPLY:    	PRODUCT,
-	lexer.DIVIDE:      	PRODUCT,
-	lexer.BANG:        	PREFIX,
-	lexer.BIT_NOT:     	PREFIX,
-	lexer.LPAR:			CALL,
+	lexer.BIT_AND:     BITWISE,
+	lexer.BIT_OR:      BITWISE,
+	lexer.EQ:          EQUALS,
+	lexer.NEQ:         EQUALS,
+	lexer.LOGICAL_AND: EQUALS,
+	lexer.LOGICAL_OR:  EQUALS,
+	lexer.LT:          LESSGREATER,
+	lexer.GT:          LESSGREATER,
+	lexer.LEQ:         LESSGREATER,
+	lexer.GEQ:         LESSGREATER,
+	lexer.PLUS:        SUM,
+	lexer.MINUS:       SUM,
+	lexer.MULTIPLY:    PRODUCT,
+	lexer.DIVIDE:      PRODUCT,
+	lexer.BANG:        PREFIX,
+	lexer.BIT_NOT:     PREFIX,
+	lexer.LPAR:        CALL,
 }
 
 type DataType int
+
 const (
 	INFERED DataType = iota
 	INT
@@ -58,7 +59,7 @@ func (dataType DataType) String() string {
 }
 
 var DATA_TYPE_MAP = map[lexer.TokenType]DataType{
-	lexer.TYPE_INT: INT,
+	lexer.TYPE_INT:  INT,
 	lexer.TYPE_UINT: UINT,
 	lexer.TYPE_BOOL: BOOL,
 }
@@ -69,24 +70,40 @@ type Node interface {
 }
 
 type Program struct {
-	statements []Statement
+	Statements []Statement
+}
+
+func (program *Program) GetToken() *lexer.Token {
+	if len(program.Statements) > 0 {
+		return program.Statements[0].GetToken()
+	}
+	return nil
+}
+
+func (program *Program) StringRepr(level int) string {
+	var builder strings.Builder
+	for _, stmt := range program.Statements {
+		builder.WriteString(stmt.StringRepr(0))
+		builder.WriteRune('\n')
+	}
+	return builder.String()
 }
 
 func newProgram() Program {
 	return Program{
-		statements: []Statement{},
+		Statements: []Statement{},
 	}
 }
 
 func (program *Program) Print() {
-	for _, stmt := range program.statements {
+	for _, stmt := range program.Statements {
 		fmt.Println(stmt.StringRepr(0))
 		fmt.Println()
 	}
 }
 
 func (program *Program) addStatement(statement Statement) {
-	program.statements = append(program.statements, statement)
+	program.Statements = append(program.Statements, statement)
 }
 
 type Statement interface {
@@ -102,10 +119,10 @@ type Expression interface {
 // Declaration: var a = 5;
 
 type DeclarationStatement struct {
-	Token 	*lexer.Token
-	Name  	*Identifier
-	Type	DataType		// For now, only builtin types are accepted
-	Value 	Expression
+	Token *lexer.Token
+	Name  *Identifier
+	Type  DataType // For now, only builtin types are accepted
+	Value Expression
 }
 
 func (decl *DeclarationStatement) statementNode() {}
@@ -127,7 +144,7 @@ func (decl *DeclarationStatement) StringRepr(level int) string {
 	if decl.Value != nil {
 		valueRepr = decl.Value.StringRepr(level + 1)
 	}
-	
+
 	return utils.IndentStringByLevel(
 		level,
 		fmt.Sprintf("DeclarationStatement\nName:\n%s\nValue:\n%s\nType: %s", nameRepr, valueRepr, decl.Type),
@@ -137,9 +154,9 @@ func (decl *DeclarationStatement) StringRepr(level int) string {
 // Assignment statement: a = 9
 
 type AssignmentStatement struct {
-	Token 	*lexer.Token
-	Name  	*Identifier
-	Value 	Expression
+	Token *lexer.Token
+	Name  *Identifier
+	Value Expression
 }
 
 func (assign *AssignmentStatement) statementNode() {}
@@ -360,7 +377,7 @@ func (infixExp *InfixExpression) StringRepr(level int) string {
 type LoopStatement struct {
 	Token     *lexer.Token
 	Condition Expression
-	Block      *StatementsBlock
+	Block     *StatementsBlock
 }
 
 func (loop *LoopStatement) statementNode() {}
@@ -382,11 +399,11 @@ func (loop *LoopStatement) StringRepr(level int) string {
 // Function definition: fun hello() {}
 
 type FunctionDeclarationStatement struct {
-	Token 			*lexer.Token
-	Name			*Identifier
-	ArgsNames		[]*Identifier
-	ArgsTypes		[]DataType
-	Body			*StatementsBlock
+	Token     *lexer.Token
+	Name      *Identifier
+	ArgsNames []*Identifier
+	ArgsTypes []DataType
+	Body      *StatementsBlock
 }
 
 func (fun *FunctionDeclarationStatement) statementNode() {}
@@ -409,15 +426,15 @@ func (fun *FunctionDeclarationStatement) StringRepr(level int) string {
 
 	return utils.IndentStringByLevel(
 		level,
-		fmt.Sprintf("FunctionDeclarationStatement:\nName:\n%s\nArgs: %s\nBody:\n%s", fun.Name.StringRepr(level + 1), argsStr, fun.Body.StringRepr(level + 1)),
+		fmt.Sprintf("FunctionDeclarationStatement:\nName:\n%s\nArgs: %s\nBody:\n%s", fun.Name.StringRepr(level+1), argsStr, fun.Body.StringRepr(level+1)),
 	)
 }
 
 // Expression statement: hello();
 
 type ExpressionStatement struct {
-	Token 		*lexer.Token
-	Expression	Expression
+	Token      *lexer.Token
+	Expression Expression
 }
 
 func (expr *ExpressionStatement) statementNode() {}
@@ -432,16 +449,16 @@ func (expr *ExpressionStatement) StringRepr(level int) string {
 	}
 	return utils.IndentStringByLevel(
 		level,
-		fmt.Sprintf("ExpressionStatement:\n%s", expr.Expression.StringRepr(level + 1)),
+		fmt.Sprintf("ExpressionStatement:\n%s", expr.Expression.StringRepr(level+1)),
 	)
 }
 
 // Call expression: hello()
 
 type CallExpression struct {
-	Token 		*lexer.Token
-	Function 	Expression
-	Arguments 	[]Expression
+	Token     *lexer.Token
+	Function  Expression
+	Arguments []Expression
 }
 
 func (ce *CallExpression) expressionNode() {}
@@ -461,15 +478,15 @@ func (ce *CallExpression) StringRepr(level int) string {
 
 	return utils.IndentStringByLevel(
 		level,
-		fmt.Sprintf("CallExpression:\nName:\n%s\nArgs:\n%s", ce.Function.StringRepr(level + 1), argsBuilder.String()),
+		fmt.Sprintf("CallExpression:\nName:\n%s\nArgs:\n%s", ce.Function.StringRepr(level+1), argsBuilder.String()),
 	)
 }
 
 // Return statement
 
 type ReturnStatement struct {
-	Token		*lexer.Token
-	Expression	Expression
+	Token      *lexer.Token
+	Expression Expression
 }
 
 func (ret *ReturnStatement) statementNode() {}
@@ -483,6 +500,6 @@ func (ret *ReturnStatement) StringRepr(level int) string {
 
 	return utils.IndentStringByLevel(
 		level,
-		fmt.Sprintf("ReturnStatement:\nExpression:\n%s", ret.Expression.StringRepr(level + 1)),
+		fmt.Sprintf("ReturnStatement:\nExpression:\n%s", ret.Expression.StringRepr(level+1)),
 	)
 }
