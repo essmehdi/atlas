@@ -255,20 +255,25 @@ func (iden *Identifier) StringRepr(level int) string {
 	)
 }
 
-// Integer literal expression: -5
+/*
+	Unsigned integer literal expression: 5
 
-type IntegerLiteralExpression struct {
+	Signed literals are not parsed. They will be detected until compilation with	
+	the prefix modifier MINUS (-)
+*/ 
+
+type UnsignedIntegerLiteralExpression struct {
 	Token *lexer.Token
-	Value int64
+	Value uint64
 }
 
-func (liter *IntegerLiteralExpression) expressionNode() {}
+func (liter *UnsignedIntegerLiteralExpression) expressionNode() {}
 
-func (liter *IntegerLiteralExpression) GetToken() *lexer.Token {
+func (liter *UnsignedIntegerLiteralExpression) GetToken() *lexer.Token {
 	return liter.Token
 }
 
-func (liter *IntegerLiteralExpression) StringRepr(level int) string {
+func (liter *UnsignedIntegerLiteralExpression) StringRepr(level int) string {
 	if liter == nil {
 		return ""
 	}

@@ -37,7 +37,7 @@ func New(code *string) *Parser {
 	parser.nextToken() // Load current & peek
 
 	parser.registerPrefixParser(lexer.IDENTIFIER, parser.parseIdentifierExpression)
-	parser.registerPrefixParser(lexer.LITERAL_INT, parser.parseIntegerLiteralExpression)
+	parser.registerPrefixParser(lexer.LITERAL_INT, parser.parseUnsignedIntegerLiteralExpression)
 	parser.registerPrefixParser(lexer.TRUE, parser.parseBooleanLiteralExpression)
 	parser.registerPrefixParser(lexer.FALSE, parser.parseBooleanLiteralExpression)
 	parser.registerPrefixParser(lexer.BANG, parser.parsePrefixExpression)
@@ -240,24 +240,24 @@ func (parser *Parser) parseIdentifierExpression() Expression {
 	return parser.parseIdentifier()
 }
 
-func (parser *Parser) parseIntegerLiteral() *IntegerLiteralExpression {
+func (parser *Parser) parseUnsignedIntegerLiteral() *UnsignedIntegerLiteralExpression {
 	if parser.currentToken.Type != lexer.LITERAL_INT {
 		parser.reportUnexpectedToken(parser.currentToken, lexer.LITERAL_INT)
 		return nil
 	}
-	convertedInteger, err := strconv.ParseInt(parser.currentToken.Value, 0, 64)
+	convertedInteger, err := strconv.ParseUint(parser.currentToken.Value, 0, 64)
 	if err != nil {
 		parser.reportError(fmt.Sprintf("Could not convert `%s` to integer %s", parser.currentToken.Value, parser.currentToken.FormattedLocation()))
 		return nil
 	}
-	return &IntegerLiteralExpression{
+	return &UnsignedIntegerLiteralExpression{
 		Token: parser.currentToken,
 		Value: convertedInteger,
 	}
 }
 
-func (parser *Parser) parseIntegerLiteralExpression() Expression {
-	return parser.parseIntegerLiteral()
+func (parser *Parser) parseUnsignedIntegerLiteralExpression() Expression {
+	return parser.parseUnsignedIntegerLiteral()
 }
 
 func (parser *Parser) parseBooleanLiteral() *BooleanLiteralExpression {
