@@ -1,56 +1,128 @@
 package compiler
 
-import "atlas/parser"
-
-type OpCode = byte
-
-type Instruction = byte
-
-const (
-	ADD OpCode = iota
-	SUB
-	MUL
-	DIV
-
-	AND
-	OR
-	XOR
-
-	LOAD
-	STORE
-
-	JUMP
-	JZ
-	JNZ
-
-	IN
-	OUT
-
-	HALT
+import (
+	"encoding/binary"
+	"fmt"
+	"strings"
 )
 
-func MakeInstruction(op OpCode, arg byte) byte {
-	return (op << 4) | arg
+type Instructions []byte
+
+type OpCode byte
+
+const (
+	CONST OpCode = iota
+
+	ADD // Adds last two items in stack
+	SUB // Subs ...
+	MUL // Multiplies ...
+	DIV // Divides
+
+	TRUE  // Pushes True to stack
+	FALSE // ... False ...
+
+	POP // Pops from stack
+)
+
+type Definition struct {
+	Name          string
+	OperandWidths []int
 }
 
-func GetOpCode(instruction Instruction) OpCode {
-	return instruction >> 4
+var DEFINITIONS = map[OpCode]*Definition{
+	CONST: {"CONST", []int{2}},
+
+	ADD:   {"ADD", []int{}},
+	SUB:   {"SUB", []int{}},
+	MUL:   {"MUL", []int{}},
+	DIV:   {"DIV", []int{}},
+
+	TRUE:  {"DIV", []int{}},
+	FALSE: {"DIV", []int{}},
+	
+	POP:   {"POP", []int{}},
 }
 
-func GetArg(instruction Instruction) byte {
-	return instruction & 0xF // Bit mask
+type ByteCode struct {
+	Instructions Instructions
+	Constants    []Object
 }
 
-type Compiler struct {
-	instructions []Instruction
-}
-
-func New() Compiler {
-	return Compiler{
-		instructions: []Instruction{},
+func LookupOperation(op byte) (*Definition, error) {
+	definition, ok := DEFINITIONS[OpCode(op)]
+	if !ok {
+		return nil, fmt.Errorf("OpCode %d undefined", op)
 	}
+	return definition, nil
 }
 
-func (compiler *Compiler) compile(program parser.Program) error {
-	return nil
+func MakeInstruction(op OpCode, operands ...int) []byte {
+	definition, ok := DEFINITIONS[op]
+	if !ok {
+		return []byte{}
+	}
+	instructionLen := 1
+	for _, width := range definition.OperandWidths {
+		instructionLen += width
+	}
+	instruction := make([]byte, instructionLen)
+	instruction[0] = byte(op)
+	offset := 1
+	for index, operand := range operands {
+		width := definition.OperandWidths[index]
+		switch width {
+		case 2:
+			binary.BigEndian.PutUint16(instruction[offset:], uint16(operand))
+		}
+		offset += width
+	}
+	return instruction
+}
+
+func ReadInstructionOperands(definition *Definition, instruction Instructions) ([]int, int) {
+	operands := make([]int, len(definition.OperandWidths))
+	offset := 0
+	for i, width := range definition.OperandWidths {
+		switch width {
+		case 2:
+			operands[i] = int(ReadUint16(instruction[offset:]))
+		}
+		offset += width
+	}
+	return operands, offset
+}
+
+func ReadUint16(ins Instructions) uint16 {
+	return binary.BigEndian.Uint16(ins)
+}
+
+func (instruction Instructions) String() string {
+	var out strings.Builder
+	i := 0
+	for i < len(instruction) {
+		definition, err := LookupOperation(instruction[i])
+		if err != nil {
+			fmt.Fprintf(&out, "Error: %s\n", err)
+			continue
+		}
+		operands, read := ReadInstructionOperands(definition, instruction[i+1:])
+		fmt.Fprintf(&out, "%04d %s\n", i, instruction.formatInstruction(definition, operands))
+		i += 1 + read
+	}
+	return out.String()
+}
+
+func (instruction Instructions) formatInstruction(def *Definition, operands []int) string {
+	operandCount := len(def.OperandWidths)
+	if len(operands) != operandCount {
+		return fmt.Sprintf("Error: operand length %d does not match length in the definition %d\n",
+			len(operands), operandCount)
+	}
+	switch operandCount {
+	case 0:
+		return def.Name
+	case 1:
+		return fmt.Sprintf("%s %d", def.Name, operands[0])
+	}
+	return fmt.Sprintf("Error: unhandled operands count for %s\n", def.Name)
 }
