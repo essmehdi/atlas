@@ -21,6 +21,20 @@ const (
 	TRUE  // Pushes True to stack
 	FALSE // ... False ...
 
+	EQ // Comparison ops of last two items in stack
+	NEQ
+	GT
+	GEQ
+
+	BANG // Prefix modifiers
+	MINUS
+
+	JUMP // Branch ops
+	JNT
+
+	GLOBAL_SET // Global bindings
+	GLOBAL_GET
+
 	POP // Pops from stack
 )
 
@@ -32,15 +46,29 @@ type Definition struct {
 var DEFINITIONS = map[OpCode]*Definition{
 	CONST: {"CONST", []int{2}},
 
-	ADD:   {"ADD", []int{}},
-	SUB:   {"SUB", []int{}},
-	MUL:   {"MUL", []int{}},
-	DIV:   {"DIV", []int{}},
+	ADD: {"ADD", []int{}},
+	SUB: {"SUB", []int{}},
+	MUL: {"MUL", []int{}},
+	DIV: {"DIV", []int{}},
 
-	TRUE:  {"DIV", []int{}},
-	FALSE: {"DIV", []int{}},
-	
-	POP:   {"POP", []int{}},
+	TRUE:  {"TRUE", []int{}},
+	FALSE: {"FALSE", []int{}},
+
+	EQ:  {"EQ", []int{}},
+	NEQ: {"NEQ", []int{}},
+	GT:  {"GT", []int{}},
+	GEQ: {"GEQ", []int{}},
+
+	BANG:  {"BANG", []int{}},
+	MINUS: {"MINUS", []int{}},
+
+	JUMP: {"JUMP", []int{2}},
+	JNT:  {"JNT", []int{2}},
+
+	GLOBAL_SET:  {"GLOBAL_SET", []int{2}},
+	GLOBAL_GET: {"GLOBAL_GET", []int{2}},
+
+	POP: {"POP", []int{}},
 }
 
 type ByteCode struct {

@@ -20,7 +20,10 @@ func main() {
 	// hi(a);
 	// `
 	testCode := `
-	1+2*3-6;
+	var a = 5;
+	loop a < 10 {
+		a = a + 1;
+	}
 	`
 	// testTokenizer(&testCode)
 	testParser(&testCode)
@@ -45,26 +48,33 @@ func testTokenizer(code *string) {
 func testParser(code *string) {
 	p := parser.New(code)
 	program := p.Parse()
-	program.Print()
 
 	for _, err := range p.Errors {
 		fmt.Println(err)
+		return
 	}
+	program.Print()
 
 	compiler := compiler.New()
-	compiler.Compile(&program)
+	err := compiler.Compile(&program)
+	if err != nil {
+		fmt.Printf("Compilation error: %s\n", err)
+	}
 
 	fmt.Println(compiler.ByteCode().Instructions)
 
 	vm := vm.New(compiler.ByteCode())
-	err := vm.Run()
+	err = vm.Run()
 	
+	print("Stack top: ")
 	stackTop := vm.StackTop()
 	if stackTop == nil {
 		println("nil")
 	} else {
 		println(stackTop.Inspect())
 	}
+
+	print("Stack ghost: ")
 	stackGhost := vm.PoppedGhost()
 	if stackGhost == nil {
 		println("nil")

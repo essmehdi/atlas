@@ -51,6 +51,7 @@ func New(code *string) *Parser {
 	parser.registerInfixParser(lexer.MULTIPLY, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.DIVIDE, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.EQ, parser.parseInfixExpression)
+	parser.registerInfixParser(lexer.NEQ, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.LT, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.GT, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.LEQ, parser.parseInfixExpression)
@@ -346,6 +347,8 @@ func (parser *Parser) parserIfStatement() *IfStatement {
 			consequences = append(consequences, elseConsequence)
 			break
 		} else if parser.peekTokenIs(lexer.IF) {
+			parser.nextToken()
+			parser.nextToken()
 			condition, consequence := parser.parseConditionAndConsequence()
 			conditions = append(conditions, condition)
 			consequences = append(consequences, consequence)
