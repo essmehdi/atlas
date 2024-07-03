@@ -35,6 +35,9 @@ const (
 	GLOBAL_SET // Global bindings
 	GLOBAL_GET
 
+	IN // Program IO
+	OUT
+
 	POP // Pops from stack
 )
 
@@ -65,8 +68,11 @@ var DEFINITIONS = map[OpCode]*Definition{
 	JUMP: {"JUMP", []int{2}},
 	JNT:  {"JNT", []int{2}},
 
-	GLOBAL_SET:  {"GLOBAL_SET", []int{2}},
+	GLOBAL_SET: {"GLOBAL_SET", []int{2}},
 	GLOBAL_GET: {"GLOBAL_GET", []int{2}},
+
+	IN: {"IN", []int{2}},
+	OUT: {"OUT", []int{}},
 
 	POP: {"POP", []int{}},
 }

@@ -8,7 +8,6 @@ const (
 	INTEGER 			= "INTEGER"
 	UNSIGNED_INTEGER 	= "UNSIGNED_INTEGER"
 	BOOLEAN				= "BOOLEAN"
-	NULL				= "NULL"
 )
 
 type Object interface {

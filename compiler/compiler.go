@@ -106,6 +106,19 @@ func (compiler *Compiler) Compile(program parser.Node) error {
 
 		postBlock := len(compiler.instructions)
 		compiler.changeOperand(jumpOpPosition, postBlock)
+	case *parser.InputStatement:
+		symbol, ok := compiler.symbolTable.Resolve(node.Name.Value)
+		if ok {
+			compiler.emit(IN, symbol.Index)
+		} else {
+			return fmt.Errorf("cannot assign new value to undeclared variable `%s`", node.Name.Value)
+		}
+	case *parser.ReturnStatement:
+		err := compiler.Compile(node.Expression)
+		if err != nil {
+			return err
+		}
+		compiler.emit(OUT)
 	case *parser.ExpressionStatement:
 		err := compiler.Compile(node.Expression)
 		if err != nil {

@@ -6,7 +6,7 @@ import (
 	"unicode"
 )
 
-var KEYWORDS = []string{"if", "else", "return", "var", "int", "uint", "bool", "while", "for", "function", "true", "false"}
+var KEYWORDS = []string{"if", "else", "return", "var", "int", "uint", "bool", "loop", "function", "true", "false"}
 
 var OPERATORS_FIRSTS = []byte{'+', '-', '*', '/', '<', '>', '&', '|', '!', '=', '~'}
 var OPERATORS_ASSIGN_MAP = map[string]TokenType{
@@ -33,8 +33,8 @@ var KEYWORDS_MAP = map[string]TokenType{
 	"var":    VAR,
 	"if":     IF,
 	"else":   ELSE,
+	"in":     IN,
 	"return": RETURN,
-	"while":  WHILE,
 	"loop":   LOOP,
 	"int":    TYPE_INT,
 	"uint":   TYPE_UINT,
@@ -52,6 +52,7 @@ const (
 	VAR TokenType = iota // Keywords
 	IF
 	ELSE
+	IN
 	RETURN
 	WHILE
 	LOOP

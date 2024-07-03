@@ -157,6 +157,8 @@ func (parser *Parser) parseStatement() Statement {
 		statement = parser.parseDeclarationOrAssignmentOrExpression(false)
 	case lexer.IDENTIFIER:
 		statement = parser.parseDeclarationOrAssignmentOrExpression(true)
+	case lexer.IN:
+		statement = parser.parseInputStatement()
 	case lexer.IF:
 		statement = parser.parserIfStatement()
 	case lexer.LOOP:
@@ -223,6 +225,27 @@ func (parser *Parser) parseDeclarationOrAssignmentOrExpression(assignment bool) 
 		Name:  name,
 		Type:  t,
 		Value: value,
+	}
+}
+
+func (parser *Parser) parseInputStatement() *InputStatement {
+	startToken := parser.currentToken
+	parser.nextToken()
+
+	identifier := parser.parseIdentifier()
+	if identifier == nil {
+		return nil
+	}
+
+	if !parser.peekTokenIs(lexer.SEMICOLON) {
+		parser.reportUnexpectedToken(parser.currentToken, lexer.SEMICOLON)
+	} else {
+		parser.nextToken()
+	}
+
+	return &InputStatement{
+		Token: startToken,
+		Name: identifier,
 	}
 }
 

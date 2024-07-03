@@ -20,10 +20,12 @@ func main() {
 	// hi(a);
 	// `
 	testCode := `
-	var a = 5;
+	var a = 0;
+	in a;
 	loop a < 10 {
 		a = a + 1;
 	}
+	return a;
 	`
 	// testTokenizer(&testCode)
 	testParser(&testCode)

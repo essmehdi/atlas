@@ -84,6 +84,28 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case compiler.IN:
+			globalIndex := compiler.ReadUint16(vm.instructions[ip+1:])
+			ip += 2
+
+			global := vm.globals[globalIndex]
+			switch global.Type() {
+			case compiler.UNSIGNED_INTEGER:
+				number := &compiler.UnsignedInteger{}
+				fmt.Scanln(&number.Value)
+				vm.globals[globalIndex] = number
+			case compiler.INTEGER:
+				number := &compiler.Integer{}
+				fmt.Scanln(&number.Value)
+				vm.globals[globalIndex] = number
+			case compiler.BOOLEAN:
+				number := &compiler.Boolean{}
+				fmt.Scanln(&number.Value)
+				vm.globals[globalIndex] = number
+			}
+		case compiler.OUT:
+			output := vm.pop()
+			fmt.Println(output.Inspect())
 		case compiler.POP:
 			vm.pop()
 		}

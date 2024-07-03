@@ -151,6 +151,26 @@ func (decl *DeclarationStatement) StringRepr(level int) string {
 	)
 }
 
+// Input statement: in number
+
+type InputStatement struct {
+	Token *lexer.Token
+	Name  *Identifier
+}
+
+func (input *InputStatement) statementNode() {}
+
+func (input *InputStatement) GetToken() *lexer.Token {
+	return input.Token
+}
+
+func (input *InputStatement) StringRepr(level int) string {
+	return utils.IndentStringByLevel(
+		level,
+		fmt.Sprintf("InputStatement\nName:\n%s", input.Name.Value),
+	)
+}
+
 // Assignment statement: a = 9
 
 type AssignmentStatement struct {
