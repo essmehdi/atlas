@@ -1,6 +1,15 @@
 package compiler
 
-import "fmt"
+import (
+	"encoding/gob"
+	"fmt"
+)
+
+func RegisterObjectsToGob() {
+	gob.Register(&UnsignedInteger{})
+	gob.Register(&Integer{})
+	gob.Register(&Boolean{})
+}
 
 type ObjectType string
 
