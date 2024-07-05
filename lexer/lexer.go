@@ -305,6 +305,9 @@ func (tokenizer *Tokenizer) skipComment() {
 	lineStart := 0
 
 	for {
+		if i >= len(*tokenizer.code) {
+			break
+		}
 		peekedChar := (*tokenizer.code)[i]
 		if peekedChar == '\n' {
 			lines++
