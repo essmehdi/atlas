@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -16,16 +13,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// compileCmd represents the compile command
 var compileCmd = &cobra.Command{
 	Use:   "compile",
-	Short: "Compiles Atlas code to atlas bytecode",
-	Long: `Takes the input code from stdin and compiles to bytecode.
-
-Example: cat code.atl | atlas compile
-	
-The output file is the bytecode saved in compiled.atlb.
-	`,
+	Short: "Compiles Atlas code to Atlas bytecode",
+	Long: `Compiles code from provided file to Atlas bytecode. If a file is not provided, the code compiled is the content of stdin.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		outputFile, _ := cmd.Flags().GetString("output")
@@ -94,14 +85,4 @@ The output file is the bytecode saved in compiled.atlb.
 func init() {
 	rootCmd.AddCommand(compileCmd)
 	compileCmd.Flags().StringP("output", "o", "compiled.atlb", "Output file of the compiled bytecode")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// compileCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// compileCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
