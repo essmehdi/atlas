@@ -26,32 +26,46 @@ Example: cat code.atl | atlas compile
 	
 The output file is the bytecode saved in compiled.atlb.
 	`,
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		outputFile, _ := cmd.Flags().GetString("output")
 
-		var codeBuffer strings.Builder
+		var pars *parser.Parser
 
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			line := scanner.Text()
-			codeBuffer.WriteString(line)
+		if len(args) == 1 {
+			newParser, err := parser.NewFromFile(args[0])
+			if err != nil {
+				fmt.Println("Could not create parser: ", err)
+				return
+			}
+
+			pars = newParser
+		} else {
+			var codeBuffer strings.Builder
+	
+			scanner := bufio.NewScanner(os.Stdin)
+			for scanner.Scan() {
+				line := scanner.Text()
+				codeBuffer.WriteString(line)
+			}
+			
+			if err := scanner.Err(); err != nil {
+				fmt.Fprintln(os.Stderr, "Error reading stdin:", err)
+				return
+			}
+	
+			code := codeBuffer.String()
+	
+			pars = parser.New(&code)
 		}
-		
-		if err := scanner.Err(); err != nil {
-			fmt.Fprintln(os.Stderr, "Error reading stdin:", err)
-			return
-		}
 
-		code := codeBuffer.String()
-
-		parser := parser.New(&code)
 		comp := compiler.New()
 
-		program := parser.Parse()
+		program := pars.Parse()
 
-		if len(parser.Errors) > 0 {
+		if len(pars.Errors) > 0 {
 			fmt.Println("Parsing failed")
-			for _, err := range parser.Errors {
+			for _, err := range pars.Errors {
 				fmt.Println(err)
 			}
 			return
@@ -79,7 +93,7 @@ The output file is the bytecode saved in compiled.atlb.
 
 func init() {
 	rootCmd.AddCommand(compileCmd)
-	compileCmd.Flags().String("output", "compiled.atlb", "Output file of the compiled bytecode")
+	compileCmd.Flags().StringP("output", "o", "compiled.atlb", "Output file of the compiled bytecode")
 
 	// Here you will define your flags and configuration settings.
 

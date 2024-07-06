@@ -3,6 +3,7 @@ package lexer
 import (
 	"atlas/utils"
 	"fmt"
+	"os"
 	"unicode"
 )
 
@@ -201,6 +202,24 @@ func New(code *string) Tokenizer {
 	}
 
 	return tokenizer
+}
+
+func NewFromFile(filePath string) (*Tokenizer, error) {
+	code, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	
+	codeString := string(code)
+
+	tokenizer := Tokenizer{
+		code:      &codeString,
+		index:     0,
+		line:      0,
+		lineStart: 0,
+	}
+
+	return &tokenizer, nil
 }
 
 // Gets next token in code. When reaching EOF, all cursors will be reset and starts tokenizing from the beginning.

@@ -22,17 +22,7 @@ type Parser struct {
 	infixParseFns  map[lexer.TokenType]infixParseFn
 }
 
-func New(code *string) *Parser {
-	parser := &Parser{
-		tokenizer:    lexer.New(code),
-		currentToken: nil,
-		peekToken:    nil,
-		Errors:       []string{},
-
-		prefixParseFns: make(map[lexer.TokenType]prefixParseFn),
-		infixParseFns:  make(map[lexer.TokenType]infixParseFn),
-	}
-
+func setupParser(parser *Parser) {
 	parser.nextToken()
 	parser.nextToken() // Load current & peek
 
@@ -60,8 +50,43 @@ func New(code *string) *Parser {
 	parser.registerInfixParser(lexer.LOGICAL_OR, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.BIT_AND, parser.parseInfixExpression)
 	parser.registerInfixParser(lexer.BIT_NOT, parser.parseInfixExpression)
+}
+
+func New(code *string) *Parser {
+	parser := &Parser{
+		tokenizer:    lexer.New(code),
+		currentToken: nil,
+		peekToken:    nil,
+		Errors:       []string{},
+
+		prefixParseFns: make(map[lexer.TokenType]prefixParseFn),
+		infixParseFns:  make(map[lexer.TokenType]infixParseFn),
+	}
+
+	setupParser(parser)
 
 	return parser
+}
+
+func NewFromFile(filePath string) (*Parser, error) {
+	tokenizer, err := lexer.NewFromFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	parser := &Parser{
+		tokenizer:    *tokenizer,
+		currentToken: nil,
+		peekToken:    nil,
+		Errors:       []string{},
+
+		prefixParseFns: make(map[lexer.TokenType]prefixParseFn),
+		infixParseFns:  make(map[lexer.TokenType]infixParseFn),
+	}
+
+	setupParser(parser)
+
+	return parser, nil
 }
 
 // Moves to next token
