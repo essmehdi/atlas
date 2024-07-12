@@ -116,11 +116,19 @@ func (parser *Parser) registerInfixParser(tokenType lexer.TokenType, parseFn inf
 }
 
 func (parser *Parser) currentTokenIs(tokenType lexer.TokenType) bool {
-	return parser.peekToken != nil && tokenType == parser.currentToken.Type
+	return parser.currentToken != nil && tokenType == parser.currentToken.Type
 }
 
 func (parser *Parser) peekTokenIs(tokenType lexer.TokenType) bool {
 	return parser.peekToken != nil && tokenType == parser.peekToken.Type
+}
+
+func (parser *Parser) currentTokenIsDataType() bool {
+	return parser.currentToken != nil && (lexer.TYPE_INT == parser.currentToken.Type || lexer.TYPE_UINT == parser.currentToken.Type || lexer.TYPE_BOOL == parser.currentToken.Type)
+}
+
+func (parser *Parser) peekTokenIsDataType() bool {
+	return parser.peekToken != nil && (lexer.TYPE_INT == parser.peekToken.Type || lexer.TYPE_UINT == parser.peekToken.Type || lexer.TYPE_BOOL == parser.peekToken.Type)
 }
 
 func (parser *Parser) currentTokenPrecedence() int {
@@ -270,7 +278,7 @@ func (parser *Parser) parseInputStatement() *InputStatement {
 
 	return &InputStatement{
 		Token: startToken,
-		Name: identifier,
+		Name:  identifier,
 	}
 }
 
@@ -386,13 +394,14 @@ func (parser *Parser) parserIfStatement() *IfStatement {
 	conditions := []Expression{condition}
 	consequences := []*StatementsBlock{consequence}
 
+	println(len(consequences))
+
 	var elseConsequence *StatementsBlock = nil
 	for parser.peekTokenIs(lexer.ELSE) {
 		parser.nextToken()
 		if parser.peekTokenIs(lexer.LBRACE) {
 			parser.nextToken()
 			elseConsequence = parser.parseStatementsBlock()
-			consequences = append(consequences, elseConsequence)
 			break
 		} else if parser.peekTokenIs(lexer.IF) {
 			parser.nextToken()
@@ -514,6 +523,25 @@ func (parser *Parser) parseFunctionDeclarationStatement() *FunctionDeclarationSt
 		parser.nextToken()
 	}
 
+	if !parser.peekTokenIs(lexer.COLON) {
+		parser.reportUnexpectedToken(parser.peekToken, lexer.LPAR)
+	} else {
+		parser.nextToken()
+	}
+
+	var returnType *DataType
+	if !parser.peekTokenIsDataType() {
+		parser.reportUnexpectedToken(parser.peekToken, lexer.LPAR)
+	} else {
+		parser.nextToken()
+		dataType, ok := DATA_TYPE_MAP[parser.currentToken.Type]
+		if ok {
+			returnType = &dataType
+		} else {
+			parser.reportError("Invalid data type in function return type")
+		}
+	}
+
 	var body *StatementsBlock = nil
 	if !parser.peekTokenIs(lexer.LBRACE) {
 		parser.reportUnexpectedToken(parser.peekToken)
@@ -523,11 +551,12 @@ func (parser *Parser) parseFunctionDeclarationStatement() *FunctionDeclarationSt
 	}
 
 	return &FunctionDeclarationStatement{
-		Token:     startToken,
-		Name:      name,
-		ArgsNames: identifiers,
-		ArgsTypes: dataTypes,
-		Body:      body,
+		Token:      startToken,
+		Name:       name,
+		ArgsNames:  identifiers,
+		ArgsTypes:  dataTypes,
+		Body:       body,
+		ReturnType: returnType,
 	}
 }
 
@@ -552,6 +581,10 @@ func (parser *Parser) parseFunctionArgs() (*[]*Identifier, *[]DataType) {
 		dataTypes = append(dataTypes, dataType)
 
 		parser.nextToken()
+
+		if parser.currentTokenIs(lexer.COMMA) {
+			parser.nextToken()
+		}
 	}
 
 	return &identifiers, &dataTypes

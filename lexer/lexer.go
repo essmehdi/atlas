@@ -7,7 +7,7 @@ import (
 	"unicode"
 )
 
-var KEYWORDS = []string{"if", "else", "return", "var", "int", "uint", "bool", "loop", "function", "true", "false"}
+var KEYWORDS = []string{"if", "else", "return", "var", "int", "uint", "bool", "loop", "fun", "true", "false"}
 
 var OPERATORS_FIRSTS = []byte{'+', '-', '*', '/', '<', '>', '&', '|', '!', '=', '~'}
 var OPERATORS_ASSIGN_MAP = map[string]TokenType{
@@ -380,42 +380,6 @@ func (tokenizer *Tokenizer) readLiteralNumber() (string, int) {
 	return buffer, i
 }
 
-func (tokenizer *Tokenizer) readLiteral() (string, int) {
-	i := tokenizer.index
-	currentChar := (*tokenizer.code)[tokenizer.index]
-	buffer := string(currentChar)
-
-	i++
-	if unicode.IsNumber(rune(currentChar)) {
-		for {
-			if len(*tokenizer.code) == i {
-				break
-			}
-			currentChar = (*tokenizer.code)[i]
-			if currentChar != '.' && !unicode.IsNumber(rune(currentChar)) {
-				break
-			}
-			buffer += string(currentChar)
-			i++
-		}
-	} else {
-		for {
-			if len(*tokenizer.code) == i {
-				break
-			}
-			currentChar = (*tokenizer.code)[i]
-			buffer += string(currentChar)
-			if currentChar == '"' {
-				break
-			}
-			i++
-		}
-		i++ // Because the loop stops at the closing " not after
-	}
-
-	return buffer, i
-}
-
 func (tokenizer *Tokenizer) readOperatorOrAssign() (string, TokenType, int) {
 	buffer := string((*tokenizer.code)[tokenizer.index])
 
@@ -430,14 +394,4 @@ func (tokenizer *Tokenizer) readOperatorOrAssign() (string, TokenType, int) {
 		buffer = string(buffer[0])
 	}
 	return buffer, OPERATORS_ASSIGN_MAP[buffer], i
-}
-
-func (tokenizer *Tokenizer) isIdentifierKeyword(value string) bool {
-	return utils.ArrayContains(value, KEYWORDS)
-}
-
-func (tokenizer *Tokenizer) updateCursorForNewLine() {
-	tokenizer.index++
-	tokenizer.line++
-	tokenizer.lineStart = tokenizer.index
 }

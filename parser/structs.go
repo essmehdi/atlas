@@ -295,9 +295,9 @@ func (iden *Identifier) StringRepr(level int) string {
 /*
 	Unsigned integer literal expression: 5
 
-	Signed literals are not parsed. They will be detected until compilation with	
+	Signed literals are not parsed. They will be detected until compilation with
 	the prefix modifier MINUS (-)
-*/ 
+*/
 
 type UnsignedIntegerLiteralExpression struct {
 	Token *lexer.Token
@@ -419,11 +419,12 @@ func (loop *LoopStatement) StringRepr(level int) string {
 // Function definition: fun hello() {}
 
 type FunctionDeclarationStatement struct {
-	Token     *lexer.Token
-	Name      *Identifier
-	ArgsNames []*Identifier
-	ArgsTypes []DataType
-	Body      *StatementsBlock
+	Token      *lexer.Token
+	Name       *Identifier
+	ArgsNames  []*Identifier
+	ArgsTypes  []DataType
+	Body       *StatementsBlock
+	ReturnType *DataType
 }
 
 func (fun *FunctionDeclarationStatement) statementNode() {}
